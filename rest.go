@@ -7,8 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"time"
-	"log"
-)
+	)
 
 type MFIClient struct {
 	client http.Client
@@ -97,12 +96,11 @@ func (client *MFIClient) SetOutputEnabled(number int, enabled bool) error {
 	} else {
 		values.Add("output", "0")
 	}
-	resp, err := client.client.PostForm(client.generateURL(fmt.Sprintf("sensors/%d", number)), values)
+	_, err := client.client.PostForm(client.generateURL(fmt.Sprintf("sensors/%d", number)), values)
 
 	if err != nil {
 		return err
 	}
 
-	log.Println(resp.StatusCode)
 	return nil
 }
