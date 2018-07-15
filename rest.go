@@ -7,20 +7,23 @@ import (
 	"fmt"
 	"net/url"
 	"time"
-	)
+)
 
 type MFIClient struct {
-	client http.Client
+	client   http.Client
 	hostname string
+	username string
+	password string
+	lastAuth time.Time
 }
 
 type SensorData struct {
-	Port int `json:"port"`
+	Port   int `json:"port"`
 	Output int `json:"output"`
-    // Power
-    // Enabled
-    // Current
-    Voltage float64 `json:"voltage"`
+	// Power
+	// Enabled
+	// Current
+	Voltage float64 `json:"voltage"`
 
 	// powerfactor
 
@@ -31,13 +34,12 @@ type SensorData struct {
 	// prevmonth
 
 	// thismonth
-
 }
 
 func GenerateCookie() string {
 	bytes := make([]byte, 32)
 	for i := 0; i < 32; i++ {
-		bytes[i] = byte(48 + rand.Intn(10))  //0=48 and Z = 48+10
+		bytes[i] = byte(48 + rand.Intn(10)) //0=48 and Z = 48+10
 	}
 	return string(bytes)
 }
@@ -46,7 +48,7 @@ func (client *MFIClient) generateURL(path string) string {
 	return fmt.Sprintf("http://%s/%s", client.hostname, path)
 }
 
-func MakeMFIClient(hostname string) (*MFIClient, error) {
+func MakeMFIClient(hostname, username, password string) (*MFIClient, error) {
 	cookieJar, _ := cookiejar.New(nil)
 
 	httpClient := http.Client{
@@ -64,7 +66,10 @@ func MakeMFIClient(hostname string) (*MFIClient, error) {
 
 	return &MFIClient{
 		hostname: hostname,
-		client: httpClient,
+		client:   httpClient,
+		username: username,
+		password: password,
+		lastAuth: time.Now(),
 	}, nil
 }
 
@@ -85,11 +90,19 @@ func (client *MFIClient) Auth(username, password string) error {
 	return nil
 }
 
+func (client *MFIClient) ensureAuth() {
+	if time.Now().Sub(client.lastAuth) > 5 * time.Minute {
+		client.Auth(client.username, client.password)
+	}
+}
+
 /*func (client *MFIClient) GetSensorData() []SensorData {
  // curl -b "AIROS_SESSIONID=01234567890123456789012345678901" 10.0.0.1/sensors
 }*/
 
 func (client *MFIClient) SetOutputEnabled(number int, enabled bool) error {
+	client.ensureAuth()
+
 	values := url.Values{}
 	if enabled {
 		values.Add("output", "1")

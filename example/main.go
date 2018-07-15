@@ -8,12 +8,7 @@ import (
 func main() {
 	mfi.TestFindDevices()
 
-	client, err := mfi.MakeMFIClient("10.42.42.12")
-	if err != nil {
-		log.Panic(err)
-	}
-
-	err = client.Auth("ubnt", "ubnt")
+	client, err := mfi.MakeMFIClient("10.42.42.12", "ubnt", "ubnt")
 	if err != nil {
 		log.Panic(err)
 	}
